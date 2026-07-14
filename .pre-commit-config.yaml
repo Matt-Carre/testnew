@@ -1,0 +1,61 @@
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v5.0.0
+    hooks:
+      - id: check-added-large-files
+        exclude: ^uv.lock
+      - id: check-yaml
+      - id: check-merge-conflict
+      - id: end-of-file-fixer
+
+  - repo: local
+    hooks:
+      - id: ruff
+        name: lint with ruff
+        language: system
+        entry: ruff check --force-exclude --fix
+        types: [python]
+        require_serial: true
+
+      - id: create-workflow-templates
+        name: creates workflow templates
+        language: system
+        entry: bash scripts/runthefiles.sh
+        types: [python]
+        pass_filenames: true
+        require_serial: true
+
+      - id: lint-yaml-files
+        name: run argo lint on the yaml files
+        language: system
+        entry: bash scripts/lintyaml.sh
+        types: [yaml]
+        pass_filenames: true
+        require_serial: true
+
+      - id: confirm-diamond-compatability
+        name: ensure yaml is diamond-compatible
+        language: system
+        entry: uv run scripts/checkyamlcompliance.py
+        types: [yaml]
+        pass_filenames: true
+        require_serial: true
+
+      - id: ruff-format
+        name: format with ruff
+        language: system
+        entry: ruff format --force-exclude
+        types: [python]
+        require_serial: true
+
+      - id: uv-sync
+        name: update uv.lock and venv
+        pass_filenames: false
+        language: system
+        entry: uv sync
+        files: ^(uv\.lock|pyproject\.toml)$
+
+  - repo: https://github.com/gitleaks/gitleaks
+    rev: v8.28.0
+    hooks:
+      - id: gitleaks

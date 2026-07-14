@@ -1,0 +1,60 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Workflow
+metadata:
+  generateName: hera-division-
+  annotations:
+    workflows.argoproj.io/description: |-
+      Takes a numerical input and returns the
+               remainder, output float, and output string to a json file
+    workflows.argoproj.io/title: Division via hera test
+    workflows.diamond.ac.uk/repository: https://github.com/DiamondLightSource/{{repo_name}}
+  labels:
+    workflows.diamond.ac.uk/science-group-examples: 'true'
+spec:
+  entrypoint: divide
+  templates:
+  - name: divide
+    steps:
+    - - name: first
+        template: do-division
+        arguments:
+          parameters:
+          - name: a
+            value: '2'
+          - name: b
+            value: '5'
+  - name: do-division
+    inputs:
+      parameters:
+      - name: a
+      - name: b
+    outputs:
+      artifacts:
+      - name: json-output
+        path: /output-dir/output.json
+    script:
+      image: None
+      source: |-
+        import os
+        import sys
+        sys.path.append(os.getcwd())
+        import json
+        try: a = json.loads(r'''{{inputs.parameters.a}}''')
+        except: a = r'''{{inputs.parameters.a}}'''
+        try: b = json.loads(r'''{{inputs.parameters.b}}''')
+        except: b = r'''{{inputs.parameters.b}}'''
+
+        div = a / b
+        intdiv = a // b
+        remain = a % b
+        dictionary_of_results = {'divide': div, 'quotient': intdiv, 'remainder': remain}
+        with open('/output-dir/output.json', 'w') as otpt:
+            json.dump(dictionary_of_results, otpt)
+      command:
+      - python
+      volumeMounts:
+      - name: output-dir
+        mountPath: /output-dir/
+  volumes:
+  - name: output-dir
+    emptyDir: {}
